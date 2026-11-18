@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>SOLMAR BAY — Open-World Crime</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0b1622; font-family: 'Segoe UI', Arial, sans-serif; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+  #hud { position: absolute; inset: 0; pointer-events: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+  #topbar { position: absolute; top: 12px; right: 14px; text-align: right; font-weight: 700; }
+  #cash { font-size: 26px; color: #7dff9a; }
+  #wanted { font-size: 26px; letter-spacing: 4px; color: #ffd23e; margin-top: 2px; }
+  #wanted .lit { color: #ff3b30; }
+  #healthbar { width: 190px; height: 12px; background: rgba(0,0,0,.55); border: 1px solid #fff; margin-top: 6px; margin-left: auto; }
+  #healthfill { height: 100%; width: 100%; background: linear-gradient(90deg,#ff5a4e,#ffb03a); }
+  #ammo { font-size: 16px; margin-top: 4px; }
+  #objective { position: absolute; top: 12px; left: 14px; max-width: 380px; background: rgba(0,0,0,.55); border-left: 4px solid #ffb03a; padding: 8px 12px; font-size: 15px; line-height: 1.35; }
+  #objective b { color: #ffb03a; }
+  #minimap { position: absolute; right: 14px; bottom: 14px; width: 200px; height: 200px; border: 2px solid rgba(255,255,255,.75); border-radius: 50%; background: #0e2a1e; }
+  #speed { position: absolute; right: 230px; bottom: 20px; font-size: 30px; font-weight: 800; }
+  #speed small { font-size: 13px; font-weight: 400; }
+  #msg { position: absolute; left: 50%; bottom: 110px; transform: translateX(-50%); font-size: 22px; font-weight: 700; color: #ffe9a8; text-align: center; }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; display: none; }
+  #crosshair:before, #crosshair:after { content: ''; position: absolute; background: #fff; }
+  #crosshair:before { left: 8px; top: 0; width: 2px; height: 18px; }
+  #crosshair:after { left: 0; top: 8px; width: 18px; height: 2px; }
+  #controls { position: absolute; left: 14px; bottom: 14px; font-size: 12px; line-height: 1.6; color: #dfe9ff; background: rgba(0,0,0,.45); padding: 8px 10px; border-radius: 6px; }
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: auto; background: linear-gradient(180deg, rgba(6,18,34,.25) 0%, rgba(6,18,34,.72) 78%); }
+  .screen h1 { font-size: 74px; margin: 0; letter-spacing: 6px; color: #fff; }
+  .screen h1 span { color: #ffb03a; }
+  .screen h2 { font-size: 20px; font-weight: 400; margin: 6px 0 22px; color: #ffe9a8; letter-spacing: 3px; }
+  .screen p { max-width: 640px; font-size: 15px; line-height: 1.6; color: #eaf2ff; margin: 0 0 18px; }
+  .screen button { pointer-events: auto; cursor: pointer; font-size: 19px; font-weight: 700; padding: 12px 34px; margin: 6px; border: 0; border-radius: 6px; background: #ffb03a; color: #1a1200; }
+  .screen button.alt { background: #1d6fb8; color: #fff; }
+  .screen .keys { font-size: 13px; color: #cfe0ff; margin-top: 16px; line-height: 1.8; }
+  #title { z-index: 5; }
+  #pause, #over { z-index: 6; display: none; }
+  #toast { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); font-size: 30px; font-weight: 800; color: #ffb03a; display: none; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud">
+  <div id="objective"><b id="objTitle">SOLMAR BAY</b><br><span id="objText">Press ENTER to start.</span></div>
+  <div id="topbar">
+    <div id="cash">$ 0</div>
+    <div id="wanted">☆☆☆☆☆</div>
+    <div id="healthbar"><div id="healthfill"></div></div>
+    <div id="ammo">PISTOL — ∞</div>
+  </div>
+  <canvas id="minimap" width="200" height="200"></canvas>
+  <div id="speed"></div>
+  <div id="msg"></div>
+  <div id="crosshair"></div>
+  <div id="toast"></div>
+  <div id="controls">WASD move / drive &nbsp;·&nbsp; SHIFT sprint &nbsp;·&nbsp; E enter / steal car &nbsp;·&nbsp; SPACE brake / jump<br>MOUSE aim &nbsp;·&nbsp; CLICK shoot &nbsp;·&nbsp; F punch &nbsp;·&nbsp; R radio &nbsp;·&nbsp; M mute &nbsp;·&nbsp; P pause &nbsp;·&nbsp; ENTER start</div>
+</div>
+<div id="title" class="screen">
+  <h1>SOLMAR <span>BAY</span></h1>
+  <h2>AN OPEN-WORLD CRIME STORY &nbsp;·&nbsp; SUN-SOAKED COAST CITY</h2>
+  <p>You are <b>Danny Cross</b>, a wheelman fresh out of the Bay City lockup. The syndicate fixer
+  <b>Lena Voss</b> has five jobs for you — and the Solmar Bay Police Department has five stars with
+  your name on them. Explore the city on foot or behind the wheel, steal what you need, outrun the
+  law, and finish the story. Everything here — the city, the people, the cars, the music — is original.</p>
+  <div>
+    <button id="btnStart">▶ &nbsp;NEW GAME</button>
+    <button id="btnContinue" class="alt" style="display:none">CONTINUE</button>
+  </div>
+  <div class="keys">WASD move / drive · SHIFT sprint · E steal a car · SPACE brake / jump · CLICK shoot · F punch · P pause</div>
+</div>
+<div id="pause" class="screen">
+  <h1 style="font-size:52px">PAUSED</h1>
+  <p>Progress saves automatically. The city waits for no one — except right now.</p>
+  <div><button id="btnResume">RESUME</button><button id="btnQuit" class="alt">SAVE &amp; TITLE</button></div>
+</div>
+<div id="over" class="screen">
+  <h1 id="overTitle" style="font-size:52px">BUSTED</h1>
+  <p id="overText">The Solmar Bay PD caught up with you.</p>
+  <div><button id="btnRetry">TRY AGAIN</button><button id="btnOverTitle" class="alt">TITLE SCREEN</button></div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
