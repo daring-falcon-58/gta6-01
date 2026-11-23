@@ -16,9 +16,39 @@
   #wanted .lit { color: #ff3b30; }
   #healthbar { width: 190px; height: 12px; background: rgba(0,0,0,.55); border: 1px solid #fff; margin-top: 6px; margin-left: auto; }
   #healthfill { height: 100%; width: 100%; background: linear-gradient(90deg,#ff5a4e,#ffb03a); }
+  #armourbar { width: 190px; height: 8px; background: rgba(0,0,0,.55); border: 1px solid #9fd0ff; margin-top: 3px; margin-left: auto; }
+  #armourfill { height: 100%; width: 0%; background: linear-gradient(90deg,#4da3ff,#9fd0ff); }
   #ammo { font-size: 16px; margin-top: 4px; }
+  #respect { font-size: 13px; margin-top: 3px; color: #9fd0ff; letter-spacing: 1px; }
+  #weapons { display: flex; gap: 5px; margin-top: 6px; justify-content: flex-end; }
+  .wslot { font-size: 12px; font-weight: 700; background: rgba(0,0,0,.6); border: 1px solid #888; border-radius: 4px; padding: 4px 7px; color: #dfe9ff; }
+  .wslot b { color: #ffb03a; margin-right: 2px; }
+  .wslot i { font-style: normal; color: #7dff9a; margin-left: 4px; }
+  .wslot.on { border-color: #ffb03a; background: rgba(255,176,58,.25); }
+  .wslot.lock { opacity: .55; }
+  .wslot.lock i { color: #ff8a7a; }
+  #district { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 13px; font-weight: 700; letter-spacing: 2px; color: #ffe9a8; background: rgba(0,0,0,.5); padding: 5px 12px; border-radius: 4px; white-space: nowrap; }
   #objective { position: absolute; top: 12px; left: 14px; max-width: 380px; background: rgba(0,0,0,.55); border-left: 4px solid #ffb03a; padding: 8px 12px; font-size: 15px; line-height: 1.35; }
   #objective b { color: #ffb03a; }
+  #objStage { display: block; margin-top: 4px; font-size: 12px; font-weight: 700; color: #7dff9a; letter-spacing: 1px; }
+  #objNext { display: block; font-size: 12px; color: #ffe9a8; }
+  #dispatch { position: absolute; top: 148px; left: 14px; width: 300px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.35); border-radius: 6px; padding: 7px 10px; font-size: 13px; line-height: 1.5; display: none; }
+  #dispatch .dhead { font-weight: 800; letter-spacing: 1px; color: #9fd0ff; border-bottom: 1px solid rgba(255,255,255,.3); padding-bottom: 3px; margin-bottom: 3px; }
+  #dispatch .drow { display: flex; justify-content: space-between; }
+  #dispatch .dcall { font-weight: 700; }
+  #dispatch .drole { color: #ffd23e; font-weight: 700; }
+  #dispatch .drole.hot { color: #ff5a4e; }
+  #dispatch .ddist { color: #cfe0ff; }
+  #vehicle { position: absolute; right: 230px; bottom: 64px; text-align: right; display: none; }
+  #vehicleName { font-size: 19px; font-weight: 800; }
+  #vehicleCondWrap { width: 170px; height: 8px; background: rgba(0,0,0,.55); border: 1px solid #fff; margin-left: auto; margin-top: 3px; }
+  #vehicleCond { height: 100%; width: 100%; background: linear-gradient(90deg,#27ae60,#7dff9a); }
+  #vehicleCondLbl { font-size: 11px; color: #cfe0ff; letter-spacing: 1px; }
+  #radio { position: absolute; left: 14px; bottom: 96px; font-size: 13px; font-weight: 700; color: #7dffd4; background: rgba(0,0,0,.45); padding: 5px 9px; border-radius: 4px; }
+  #dialogue { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); width: 560px; max-width: 72vw; display: none; align-items: flex-start; gap: 12px; background: rgba(8,14,28,.82); border: 1px solid rgba(255,176,58,.6); border-left: 4px solid #ffb03a; border-radius: 8px; padding: 10px 14px; text-align: left; }
+  #dlgFace { flex: 0 0 46px; width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg,#8a4a72,#e8703f); color: #fff; font-weight: 800; font-size: 19px; display: flex; align-items: center; justify-content: center; }
+  #dlgName { font-size: 13px; font-weight: 800; color: #ffb03a; letter-spacing: 1px; }
+  #dlgText { font-size: 15px; line-height: 1.4; color: #fff; margin-top: 2px; }
   #minimap { position: absolute; right: 14px; bottom: 14px; width: 200px; height: 200px; border: 2px solid rgba(255,255,255,.75); border-radius: 50%; background: #0e2a1e; }
   #speed { position: absolute; right: 230px; bottom: 20px; font-size: 30px; font-weight: 800; }
   #speed small { font-size: 13px; font-weight: 400; }
@@ -47,15 +77,23 @@
 <body>
 <div id="app"></div>
 <div id="hud">
-  <div id="objective"><b id="objTitle">SOLMAR BAY</b><br><span id="objText">Press ENTER to start.</span></div>
+  <div id="objective"><b id="objTitle">SOLMAR BAY</b><br><span id="objText">Press ENTER to start.</span><span id="objStage"></span><span id="objNext"></span></div>
+  <div id="dispatch"><div id="dispatchRows"></div></div>
+  <div id="district">FRI 17:41 · MARINA PLAZA · SOLMAR BAY</div>
   <div id="topbar">
     <div id="cash">$ 0</div>
     <div id="wanted">☆☆☆☆☆</div>
     <div id="healthbar"><div id="healthfill"></div></div>
+    <div id="armourbar"><div id="armourfill"></div></div>
     <div id="ammo">PISTOL — ∞</div>
+    <div id="weapons"></div>
+    <div id="respect">RESPECT 0 · ROOKIE</div>
   </div>
   <canvas id="minimap" width="200" height="200"></canvas>
+  <div id="vehicle"><div id="vehicleName"></div><div id="vehicleCondWrap"><div id="vehicleCond"></div></div><div id="vehicleCondLbl">CONDITION</div></div>
   <div id="speed"></div>
+  <div id="radio">♪ BAY FM 98.6 — "Sunset Drive"</div>
+  <div id="dialogue"><div id="dlgFace">LV</div><div><div id="dlgName">LENA VOSS · FIXER</div><div id="dlgText"></div></div></div>
   <div id="msg"></div>
   <div id="crosshair"></div>
   <div id="toast"></div>
@@ -65,7 +103,7 @@
   <h1>SOLMAR <span>BAY</span></h1>
   <h2>AN OPEN-WORLD CRIME STORY &nbsp;·&nbsp; SUN-SOAKED COAST CITY</h2>
   <p>You are <b>Danny Cross</b>, a wheelman fresh out of the Bay City lockup. The syndicate fixer
-  <b>Lena Voss</b> has five jobs for you — and the Solmar Bay Police Department has five stars with
+  <b>Lena Voss</b> has eight jobs for you — and the Solmar Bay Police Department has five stars with
   your name on them. Explore the city on foot or behind the wheel, steal what you need, outrun the
   law, and finish the story. Everything here — the city, the people, the cars, the music — is original.</p>
   <div>

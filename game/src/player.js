@@ -37,7 +37,11 @@ export class Player {
     this.heading = Math.PI; // facing the plaza
     this.y = 0; this.vy = 0;
     this.health = 100;
+    this.armour = 0; // vest pickup soaks damage before health does
     this.ammo = 60;
+    this.smgAmmo = 0;
+    this.hasSmg = false;
+    this.weapon = 'pistol'; // fists | pistol | smg
     this.speed = 0;
     this.punchCd = 0;
     this.shootCd = 0;
@@ -47,7 +51,9 @@ export class Player {
 
   reset(x, z) {
     this.x = x; this.z = z; this.heading = Math.PI;
-    this.health = 100; this.ammo = 60; this.onFoot = true; this.y = 0; this.vy = 0;
+    this.health = 100; this.armour = 0; this.ammo = 60;
+    this.smgAmmo = 0; this.hasSmg = false; this.weapon = 'pistol';
+    this.onFoot = true; this.y = 0; this.vy = 0;
     this.mesh.visible = true;
   }
 
@@ -94,8 +100,11 @@ export class Player {
     this.mesh.position.y = this.y + Math.abs(Math.sin(this.walkPhase)) * (this.speed > 0 ? 0.06 : 0);
   }
 
+  // Armour absorbs 60% of each hit; the rest reaches health.
   damage(amount) {
-    this.health = clamp(this.health - amount, 0, 100);
+    const soaked = Math.min(this.armour, amount * 0.6);
+    this.armour = Math.max(0, this.armour - soaked);
+    this.health = clamp(this.health - (amount - soaked), 0, 100);
     return this.health <= 0;
   }
 
