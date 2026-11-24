@@ -23,7 +23,7 @@ function windowTexture(rng, base) {
   g.fillRect(0, 0, 64, 128);
   for (let y = 8; y < 120; y += 14) {
     for (let x = 6; x < 58; x += 12) {
-      g.fillStyle = rng() < 0.45 ? '#ffe9a8' : '#1d2f45';
+      g.fillStyle = rng() < 0.62 ? '#ffe9a8' : '#1d2f45';
       g.fillRect(x, y, 8, 9);
     }
   }
@@ -39,16 +39,56 @@ export function buildCity(scene, seed) {
   const colliders = []; // {minX, maxX, minZ, maxZ}
   const roads = [];     // road centre lines for traffic: {axis:'x'|'z', at, from, to}
 
-  const sun = new THREE.DirectionalLight(0xfff2d0, 2.4);
-  sun.position.set(120, 180, 60);
+  // Golden-hour dusk: low warm sun in the west, a gradient sky dome,
+  // warm haze. The whole game is lit like the last hour of daylight —
+  // the look the genre's best entries show.
+  const sun = new THREE.DirectionalLight(0xffb36b, 2.6);
+  sun.position.set(-140, 90, 80);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.camera.left = -220; sun.shadow.camera.right = 220;
   sun.shadow.camera.top = 220; sun.shadow.camera.bottom = -220;
   sun.shadow.camera.far = 500;
   scene.add(sun);
-  scene.add(new THREE.HemisphereLight(0xbfd9ff, 0x3a2f22, 1.1));
-  scene.fog = new THREE.Fog(0xcfe4f5, 260, 620);
+  scene.add(new THREE.HemisphereLight(0xffd9a0, 0x4a3226, 1.0));
+  scene.fog = new THREE.Fog(0xe8906b, 260, 620);
+
+  // Sky dome: dusk gradient (violet top → amber horizon) painted on a
+  // canvas, so the sky reads as sunset from every street.
+  const skyCanvas = document.createElement('canvas');
+  skyCanvas.width = 4; skyCanvas.height = 256;
+  const sg = skyCanvas.getContext('2d');
+  const grad = sg.createLinearGradient(0, 0, 0, 256);
+  grad.addColorStop(0, '#3d2b5c');
+  grad.addColorStop(0.45, '#8a4a72');
+  grad.addColorStop(0.72, '#e8703f');
+  grad.addColorStop(1, '#ffb36b');
+  sg.fillStyle = grad;
+  sg.fillRect(0, 0, 4, 256);
+  const skyTex = new THREE.CanvasTexture(skyCanvas);
+  skyTex.colorSpace = THREE.SRGBColorSpace;
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(700, 24, 16),
+    new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false }),
+  );
+  scene.add(sky);
+  scene.background = null;
+
+  // The low sun itself: a bright disc hanging over the ocean horizon.
+  const sunDisc = new THREE.Mesh(
+    new THREE.CircleGeometry(26, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffd9a0, fog: false }),
+  );
+  sunDisc.position.set(-420, 95, 260);
+  sunDisc.lookAt(0, 20, 0);
+  scene.add(sunDisc);
+  const sunGlow = new THREE.Mesh(
+    new THREE.CircleGeometry(44, 32),
+    new THREE.MeshBasicMaterial({ color: 0xff9a4d, transparent: true, opacity: 0.35, fog: false }),
+  );
+  sunGlow.position.set(-422, 95, 262);
+  sunGlow.lookAt(0, 20, 0);
+  scene.add(sunGlow);
 
   // Ground: grass-green base, sand beach strip, ocean plane.
   const ground = new THREE.Mesh(
@@ -196,6 +236,32 @@ export function buildCity(scene, seed) {
       tower: { x: 80, z: 80, label: 'Aurora Tower' },
     },
   };
+}
+
+// District name for a map position: the nearest named landmark when
+// close, else the quarter of the city the point sits in. The HUD shows
+// it beside the clock, so the player always knows where they are.
+const DISTRICT_LANDMARKS = [
+  { x: 0, z: 0, label: 'Marina Plaza' },
+  { x: -120, z: 202, label: 'Sunset Pier' },
+  { x: 60, z: 176, label: 'Solmar Beach' },
+  { x: 120, z: -120, label: "Reyes' Garage" },
+  { x: -160, z: 120, label: 'Bay Docks' },
+  { x: 80, z: 80, label: 'Aurora Tower' },
+];
+
+export function districtAt(x, z) {
+  let best = null; let bestD = 48;
+  for (const l of DISTRICT_LANDMARKS) {
+    const d = Math.hypot(x - l.x, z - l.z);
+    if (d < bestD) { bestD = d; best = l.label; }
+  }
+  if (best) return best;
+  if (z >= 150) return 'Solmar Beach';
+  if (x <= -100) return 'Bay Docks';
+  if (x >= 100) return 'Aurora District';
+  if (z <= -120) return 'North End';
+  return 'Downtown';
 }
 
 // Push a circle (x,z,r) out of building colliders; returns corrected pos.
