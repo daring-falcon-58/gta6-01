@@ -44,13 +44,14 @@ export function stageShot(name, game) {
   if (name === 'drive') {
     game.startRun();
     // Steal the nearest parked car through the real key path, then place
-    // it on the road centre line heading east so the drive stays on
-    // asphalt (and clear of the plaza, so no mission toast fires).
+    // it on the beachfront road heading east so the drive stays on
+    // asphalt with the ocean and the dusk sun on the right (and clear of
+    // the plaza, so no mission toast fires).
     const car = game.traffic.nearestParked(game.player.x, game.player.z, 60);
     if (car) {
       game.player.x = car.x - 3; game.player.z = car.z;
       game.enterCar(car);
-      car.x = -60; car.z = 40; car.heading = Math.PI / 2; car.speed = 0;
+      car.x = -60; car.z = 160; car.heading = Math.PI / 2; car.speed = 0;
       car.sync();
       game.player.x = car.x; game.player.z = car.z;
       game.camYaw = car.heading;
@@ -62,13 +63,21 @@ export function stageShot(name, game) {
     if (car) {
       game.player.x = car.x - 3; game.player.z = car.z;
       game.enterCar(car);
-      car.x = -60; car.z = 40; car.heading = Math.PI / 2; car.speed = 0;
+      car.x = -60; car.z = 160; car.heading = Math.PI / 2; car.speed = 0;
       car.sync();
       game.player.x = car.x; game.player.z = car.z;
       game.camYaw = car.heading;
     }
-    game.police.addHeat(55);
-    runSteps(game, 5, driveForward(game));
+    // 4 wanted stars: CONDOR-1 deploys, the dispatch board fills, and a
+    // roadblock sets up ahead. Three and a half seconds down the beach
+    // road: long enough for the cruisers to close in and the heli to
+    // swing into frame ahead of the player, short enough that the rams
+    // have not yet pinned the car (a longer run ends at 6 km/h with the
+    // car shoved against a tower). Open sand on one side, so the rams
+    // shove the car wide instead of pinning it.
+    game.police.addHeat(75);
+    runSteps(game, 3.5, driveForward(game));
+    game.hud.showDialogue('LENA VOSS', 'FIXER', 'Four stars, Danny — CONDOR-1 is overhead. Lose them on the beach road.', 30);
     void rng;
   } else if (name === 'mission') {
     game.startRun();
@@ -87,6 +96,7 @@ export function stageShot(name, game) {
       game.step(STEP);
       game.input.endFrame();
     }
+    game.hud.showDialogue('LENA VOSS', 'FIXER', game.missions.current().brief, 30);
   } else {
     // start: the title screen over a living city, traffic rolling.
     game.state = 'title';

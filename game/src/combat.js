@@ -32,16 +32,29 @@ export class Combat {
     this.rivals = [];
   }
 
-  // Hitscan shot from the camera. Returns the rival hit (or null).
+  // Hitscan shot from the camera. Pistol: slow, precise. SMG: fast,
+  // loose spread, its own ammo. Returns the rival hit (or null).
   shoot(camera, player, audio, onRivalDown) {
-    if (player.ammo <= 0 || player.shootCd > 0) return null;
-    player.ammo -= 1;
-    player.shootCd = 0.28;
+    const isSmg = player.weapon === 'smg' && player.hasSmg;
+    if (isSmg) {
+      if (player.smgAmmo <= 0 || player.shootCd > 0) return null;
+      player.smgAmmo -= 1;
+      player.shootCd = 0.09;
+    } else {
+      if (player.ammo <= 0 || player.shootCd > 0) return null;
+      player.ammo -= 1;
+      player.shootCd = 0.28;
+    }
     this.flash = 0.06;
     audio.shoot();
     const origin = camera.position.clone();
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
+    if (isSmg) {
+      // SMG spread: a small random sideways kick on the ray.
+      const side = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+      dir.addScaledVector(side, (Math.random() - 0.5) * 0.09).normalize();
+    }
     let best = null; let bestD = 90;
     for (const r of this.rivals) {
       if (!r.alive) continue;

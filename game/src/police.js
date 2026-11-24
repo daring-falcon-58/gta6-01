@@ -51,7 +51,9 @@ export class Police {
   }
 
   // dt step: spawn to match wanted, chase the player, cool down when hidden.
-  step(dt, player, playerCar, committingCrime) {
+  // roadblock is {car, x, z} or null: that cruiser drives to the point
+  // ahead of the player and waits there instead of chasing.
+  step(dt, player, playerCar, committingCrime, roadblock) {
     if (committingCrime) this.coolTimer = 8;
     else this.coolTimer = Math.max(0, this.coolTimer - dt);
     if (this.coolTimer === 0 && this.wanted > 0) {
@@ -82,18 +84,22 @@ export class Police {
     }
 
     // Cruiser chase: steer toward the player, ram at close range.
+    // The roadblock unit instead holds the point ahead of the player.
     for (const c of this.cars) {
-      const dx = px - c.x; const dz = pz - c.z;
+      const isBlock = roadblock && roadblock.car === c;
+      const tx = isBlock ? roadblock.x : px;
+      const tz = isBlock ? roadblock.z : pz;
+      const dx = tx - c.x; const dz = tz - c.z;
       const dist = Math.hypot(dx, dz);
       const target = Math.atan2(dx, dz);
       c.heading = angleLerp(c.heading, target, Math.min(1, dt * 2.2));
-      const top = 14 + this.wanted * 3.2;
-      c.speed = Math.min(top, c.speed + 12 * dt);
+      const top = isBlock ? 18 : 14 + this.wanted * 3.2;
+      c.speed = isBlock && dist < 6 ? Math.max(0, c.speed - 20 * dt) : Math.min(top, c.speed + 12 * dt);
       c.x += Math.sin(c.heading) * c.speed * dt;
       c.z += Math.cos(c.heading) * c.speed * dt;
       c.mesh.position.set(c.x, 0, c.z);
       c.mesh.rotation.y = c.heading;
-      if (dist < 3.4) {
+      if (dist < 3.4 && !isBlock) {
         // Ram: shove the player's car, or hurt the player on foot.
         if (playerCar) {
           playerCar.speed *= 0.55;

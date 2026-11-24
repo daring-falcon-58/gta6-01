@@ -7,6 +7,16 @@ import { collideCircle, clampToCity, CITY } from './city.js';
 
 export const CAR_COLORS = [0xc0392b, 0x2e86c1, 0xf1c40f, 0x27ae60, 0x8e44ad, 0xe67e22, 0x95a5a6, 0x1a1a1a, 0xecf0f1, 0x16a085];
 
+// Every drivable kind has a name — the HUD shows it with the car's
+// condition while the player drives, the way a garage would.
+export const CAR_NAMES = {
+  sports: 'Meridian GT',
+  sedan: 'Calyx Sprint',
+  taxi: 'Bay Cab',
+  pickup: 'Dune Hauler',
+  police: 'SBPD Interceptor',
+};
+
 export function buildCarMesh(color, kind) {
   const g = new THREE.Group();
   const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.5 });
@@ -49,6 +59,7 @@ export class Car {
     this.x = x; this.z = z; this.heading = heading;
     this.speed = 0;
     this.steer = 0;
+    this.condition = 100; // bodywork: hard hits wear it down
     this.maxSpeed = this.kind === 'sports' ? 34 : this.kind === 'police' ? 36 : 24;
     this.accel = this.kind === 'sports' ? 16 : 11;
     this.alive = true;
@@ -79,7 +90,10 @@ export class Car {
     const fixed = collideCircle(colliders, nx, nz, 2.1);
     const clamped = clampToCity(fixed.x, fixed.z);
     const hit = Math.hypot(clamped.x - nx, clamped.z - nz) > 0.05 || Math.hypot(before.x - clamped.x, before.z - clamped.z) < Math.abs(this.speed) * dt * 0.5;
-    if (hit && Math.abs(this.speed) > 6) this.speed *= 0.4;
+    if (hit && Math.abs(this.speed) > 6) {
+      this.speed *= 0.4;
+      this.condition = Math.max(0, this.condition - 8); // bent panels
+    }
     this.x = clamped.x; this.z = clamped.z;
     this.sync();
     return hit && Math.abs(this.speed) > 4;
